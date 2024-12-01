@@ -4,7 +4,14 @@ import {
 } from './lexicon/types/com/atproto/sync/subscribeRepos';
 import { FirehoseSubscriptionBase, getOpsByType } from './util/subscription';
 
-const filters = ['huskers', '#gbr', 'go big red'];
+const filters = [
+  'huskers',
+  '#gbr',
+  'go big red',
+  'nebrasketball',
+  'nebraska volleyball',
+  'husker volleyball',
+];
 const excludes = [];
 
 export class FirehoseSubscription extends FirehoseSubscriptionBase {
