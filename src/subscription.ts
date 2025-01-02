@@ -36,9 +36,6 @@ export class FirehoseSubscription extends FirehoseSubscriptionBase {
         indexedAt: new Date().toISOString(),
       };
     });
-    filteredPosts.forEach((create) => {
-      console.log(create.record.text);
-    });
 
     if (postsToDelete.length > 0) {
       await this.db
