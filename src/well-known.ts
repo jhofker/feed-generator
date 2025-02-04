@@ -1,12 +1,12 @@
-import express from 'express'
-import { AppContext } from './config'
+import express from 'express';
+import { AppContext } from './config';
 
 const makeRouter = (ctx: AppContext) => {
-  const router = express.Router()
+  const router = express.Router();
 
   router.get('/.well-known/did.json', (_req, res) => {
     if (!ctx.cfg.serviceDid.endsWith(ctx.cfg.hostname)) {
-      return res.sendStatus(404)
+      return res.sendStatus(404);
     }
     res.json({
       '@context': ['https://www.w3.org/ns/did/v1'],
@@ -18,9 +18,9 @@ const makeRouter = (ctx: AppContext) => {
           serviceEndpoint: `https://${ctx.cfg.hostname}`,
         },
       ],
-    })
-  })
+    });
+  });
 
-  return router
-}
-export default makeRouter
+  return router;
+};
+export default makeRouter;
