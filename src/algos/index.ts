@@ -4,7 +4,7 @@ import {
   OutputSchema as AlgoOutput,
 } from '../lexicon/types/app/bsky/feed/getFeedSkeleton';
 import * as huskers from './huskers';
-
+import * as nePolitics from './ne-politics';
 type AlgoHandler = (
   ctx: AppContext,
   params: QueryParams,
@@ -12,6 +12,7 @@ type AlgoHandler = (
 
 const algos: Record<string, AlgoHandler> = {
   [huskers.shortname]: huskers.handler,
+  [nePolitics.shortname]: nePolitics.handler,
 };
 
 export default algos;
