@@ -32,54 +32,59 @@ export class FirehoseSubscription extends FirehoseSubscriptionBase {
   async handleEvent(evt: RepoEvent) {
     if (!isCommit(evt)) return;
 
-    const ops = await getOpsByType(evt);
+    try {
+      const ops = await getOpsByType(evt);
+      
+      // Process posts for each feed type
+      let allPostsToCreate: Array<{
+        uri: string;
+        cid: string;
+        indexedAt: string;
+        feed_type: string;
+      }> = [];
 
-    const postsToDelete = ops.posts.deletes.map((del) => del.uri);
+      for (const [feedType, filters] of Object.entries(feedFilters)) {
+        const filteredPosts = ops.posts.creates.filter((create) => {
+          try {
+            const text = create.record.text.toLowerCase();
+            return (
+              !excludes.some((e) => text.includes(e)) &&
+              filters.some((f) => text.includes(f.toLowerCase()))
+            );
+          } catch (err) {
+            console.error('Error processing post:', err);
+            return false;
+          }
+        });
 
-    // Process posts for each feed type
-    let allPostsToCreate: Array<{
-      uri: string;
-      cid: string;
-      indexedAt: string;
-      feed_type: string;
-    }> = [];
-
-    for (const [feedType, filters] of Object.entries(feedFilters)) {
-      const filteredPosts = ops.posts.creates.filter((create) => {
-        const text = create.record.text.toLowerCase();
-
-        return (
-          !excludes.some((e) => text.includes(e)) &&
-          filters.some((f) => text.includes(f.toLowerCase()))
-        );
-      });
-
-      const postsToCreate = filteredPosts.map((create) => {
-        console.log(create);
-        return {
+        const postsToCreate = filteredPosts.map((create) => ({
           uri: create.uri,
           cid: create.cid,
           indexedAt: new Date().toISOString(),
           feed_type: feedType,
-        };
-      });
+        }));
 
-      allPostsToCreate = [...allPostsToCreate, ...postsToCreate];
-    }
+        allPostsToCreate = [...allPostsToCreate, ...postsToCreate];
+      }
 
-    if (postsToDelete.length > 0) {
-      await this.db
-        .deleteFrom('post')
-        .where('uri', 'in', postsToDelete)
-        .execute();
-    }
+      // Batch database operations
+      if (ops.posts.deletes.length > 0) {
+        await this.db
+          .deleteFrom('post')
+          .where('uri', 'in', ops.posts.deletes.map(del => del.uri))
+          .execute();
+      }
 
-    if (allPostsToCreate.length > 0) {
-      await this.db
-        .insertInto('post')
-        .values(allPostsToCreate)
-        .onConflict((oc) => oc.doNothing())
-        .execute();
+      if (allPostsToCreate.length > 0) {
+        await this.db
+          .insertInto('post')
+          .values(allPostsToCreate)
+          .onConflict((oc) => oc.doNothing())
+          .execute();
+      }
+    } catch (err) {
+      console.error('Error processing event:', err);
+      // Don't throw the error, just log it and continue
     }
   }
 }
