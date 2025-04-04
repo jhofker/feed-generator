@@ -4,29 +4,42 @@ import {
 } from './lexicon/types/com/atproto/sync/subscribeRepos';
 import { FirehoseSubscriptionBase, getOpsByType } from './util/subscription';
 
-const feedFilters = {
-  huskers: [
-    'huskers',
-    '#gbr',
-    'go big red',
-    'nebrasketball',
-    'nebraska volleyball',
-    'husker volleyball',
-  ],
-  'ne-politics': [
-    'nebraska politics',
-    'nebraska governor',
-    'nebraska legislature',
-    'nebraska senator',
-    'nebraska representative',
-    'nebraska election',
-    'pillen', // Current NE governor
-    '#nepol',
-    '#neleg',
-  ],
-};
+interface FeedFilter {
+  include: string[];
+  exclude: string[];
+}
 
-const excludes = [];
+const feedFilters: Record<string, FeedFilter> = {
+  huskers: {
+    include: [
+      'huskers',
+      '#gbr',
+      'go big red',
+      'nebrasketball',
+      'nebraska volleyball',
+      'husker volleyball',
+    ],
+    exclude: [],
+  },
+  'ne-politics': {
+    include: [
+      'nebraska politics',
+      'nebraska governor',
+      'nebraska legislature',
+      'nebraska senator',
+      'nebraska representative',
+      'nebraska election',
+      'pillen', // Current NE governor
+      '#nepol',
+      '#neleg',
+    ],
+    exclude: [],
+  },
+  lincoln: {
+    include: ['#lnk', '#lnkwx'],
+    exclude: ['#apt'],
+  },
+};
 
 export class FirehoseSubscription extends FirehoseSubscriptionBase {
   async handleEvent(evt: RepoEvent) {
@@ -34,7 +47,7 @@ export class FirehoseSubscription extends FirehoseSubscriptionBase {
 
     try {
       const ops = await getOpsByType(evt);
-      
+
       // Process posts for each feed type
       let allPostsToCreate: Array<{
         uri: string;
@@ -48,8 +61,8 @@ export class FirehoseSubscription extends FirehoseSubscriptionBase {
           try {
             const text = create.record.text.toLowerCase();
             return (
-              !excludes.some((e) => text.includes(e)) &&
-              filters.some((f) => text.includes(f.toLowerCase()))
+              !filters.exclude.some((e) => text.includes(e.toLowerCase())) &&
+              filters.include.some((f) => text.includes(f.toLowerCase()))
             );
           } catch (err) {
             console.error('Error processing post:', err);
@@ -71,7 +84,11 @@ export class FirehoseSubscription extends FirehoseSubscriptionBase {
       if (ops.posts.deletes.length > 0) {
         await this.db
           .deleteFrom('post')
-          .where('uri', 'in', ops.posts.deletes.map(del => del.uri))
+          .where(
+            'uri',
+            'in',
+            ops.posts.deletes.map((del) => del.uri),
+          )
           .execute();
       }
 
