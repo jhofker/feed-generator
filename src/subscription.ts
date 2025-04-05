@@ -29,7 +29,6 @@ const feedFilters: Record<string, FeedFilter> = {
       'nebraska senator',
       'nebraska representative',
       'nebraska election',
-      'pillen', // Current NE governor
       '#nepol',
       '#neleg',
     ],
