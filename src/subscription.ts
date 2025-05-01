@@ -36,7 +36,7 @@ const feedFilters: Record<string, FeedFilter> = {
   },
   lincoln: {
     include: ['#lnk', '#lnkwx'],
-    exclude: ['#apt'],
+    exclude: ['#apt', '#ladynokids'],
   },
 };
 
